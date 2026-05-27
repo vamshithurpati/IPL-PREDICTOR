@@ -1,0 +1,113 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 0. Default deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // --- Helpers ---
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isVerified() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+
+    function isAdmin() {
+      return isVerified() && (
+        request.auth.token.email == 'vedasrikavya316@gmail.com' ||
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+      );
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // --- Entities ---
+
+    // Teams
+    function isValidTeam(t) {
+      return t.name is string && t.name.size() > 0 && t.name.size() <= 100 &&
+             t.shortName is string && t.shortName.size() >= 2 && t.shortName.size() <= 5;
+    }
+
+    match /teams/{teamId} {
+      allow read: if true;
+      allow write: if isAdmin() && isValidTeam(incoming());
+    }
+
+    // Players
+    function isValidPlayer(p) {
+      return p.name is string && p.name.size() > 0 && p.name.size() <= 100 &&
+             p.teamId is string && p.role in ["Batsman", "Bowler", "All-rounder", "Wicketkeeper"];
+    }
+
+    match /players/{playerId} {
+      allow read: if true;
+      allow write: if isAdmin() && isValidPlayer(incoming());
+    }
+
+    // Matches
+    function isValidMatch(m) {
+      return m.team1Id is string && m.team2Id is string &&
+             m.team1Id != m.team2Id &&
+             m.status in ["upcoming", "live", "completed"] &&
+             m.venue is string;
+    }
+
+    match /matches/{matchId} {
+      allow read: if true;
+      allow write: if isAdmin() && isValidMatch(incoming());
+    }
+
+    // Predictions
+    function isValidPrediction(p) {
+      return p.matchId is string &&
+             p.userId == request.auth.uid &&
+             p.predictedWinnerId is string &&
+             p.timestamp == request.time;
+    }
+
+    match /predictions/{predictionId} {
+      allow read: if isSignedIn() && (isOwner(existing().userId) || isAdmin());
+      allow list: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow create: if isVerified() && isValidPrediction(incoming());
+      allow update: if isVerified() && isOwner(existing().userId) && 
+                      isValidPrediction(incoming()) &&
+                      incoming().diff(existing()).affectedKeys().hasOnly(['predictedWinnerId', 'timestamp']);
+      allow delete: if isVerified() && (isOwner(existing().userId) || isAdmin());
+    }
+
+    // Venues
+    function isValidVenue(v) {
+      return v.name is string && v.name.size() > 0 && v.name.size() <= 100 &&
+             v.city is string && v.city.size() > 0 && v.city.size() <= 100;
+    }
+
+    match /venues/{venueId} {
+      allow read: if true;
+      allow write: if isAdmin() && isValidVenue(incoming());
+    }
+
+    // Update Logs
+    match /update_logs/{logId} {
+      allow read, write: if isAdmin();
+    }
+  }
+}

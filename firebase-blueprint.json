@@ -1,0 +1,123 @@
+{
+  "entities": {
+    "Team": {
+      "title": "Team",
+      "description": "An IPL Team",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "shortName": { "type": "string" },
+        "logoUrl": { "type": "string" },
+        "primaryColor": { "type": "string" },
+        "secondaryColor": { "type": "string" }
+      },
+      "required": ["name", "shortName"]
+    },
+    "Player": {
+      "title": "Player",
+      "description": "An IPL Player",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "teamId": { "type": "string" },
+        "role": { "type": "string", "enum": ["Batsman", "Bowler", "All-rounder", "Wicketkeeper"] },
+        "image": { "type": "string" },
+        "matches": { "type": "number" },
+        "runs": { "type": "number" },
+        "wickets": { "type": "number" },
+        "battingAvg": { "type": "number" },
+        "strikeRate": { "type": "number" },
+        "economy": { "type": "number" }
+      },
+      "required": ["name", "teamId", "role"]
+    },
+    "Match": {
+      "title": "Match",
+      "description": "An IPL Match",
+      "type": "object",
+      "properties": {
+        "team1Id": { "type": "string" },
+        "team2Id": { "type": "string" },
+        "date": { "type": "string", "format": "date-time" },
+        "venue": { "type": "string" },
+        "status": { "type": "string", "enum": ["upcoming", "live", "completed"] },
+        "winnerId": { "type": "string" }
+      },
+      "required": ["team1Id", "team2Id", "venue", "status"]
+    },
+    "Prediction": {
+      "title": "Prediction",
+      "description": "AI generated match prediction",
+      "type": "object",
+      "properties": {
+        "matchId": { "type": "string" },
+        "userId": { "type": "string" },
+        "predictedWinnerId": { "type": "string" },
+        "winProbability": { "type": "object" },
+        "confidence": { "type": "number" },
+        "aiExplanation": { "type": "string" },
+        "timestamp": { "type": "string", "format": "date-time" }
+      },
+      "required": ["matchId", "userId", "predictedWinnerId"]
+    },
+    "Venue": {
+      "title": "Venue",
+      "description": "An IPL Stadium",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "city": { "type": "string" },
+        "capacity": { "type": "number" },
+        "lat": { "type": "number" },
+        "lng": { "type": "number" },
+        "imageUrl": { "type": "string" },
+        "pitchType": { "type": "string" },
+        "avgFirstInn": { "type": "number" },
+        "avgSecondInn": { "type": "number" },
+        "highestChase": { "type": "number" },
+        "batFirstWinProb": { "type": "number" },
+        "tossImpact": { "type": "string" },
+        "historicalMatchCount": { "type": "number" }
+      },
+      "required": ["name", "city"]
+    },
+    "UpdateLog": {
+      "title": "UpdateLog",
+      "description": "Log of data sync operations",
+      "type": "object",
+      "properties": {
+        "timestamp": { "type": "string", "format": "date-time" },
+        "status": { "type": "string", "enum": ["success", "failure"] },
+        "type": { "type": "string" },
+        "message": { "type": "string" }
+      },
+      "required": ["timestamp", "status"]
+    }
+  },
+  "firestore": {
+    "teams": {
+      "schema": "Team",
+      "description": "Collection of IPL teams"
+    },
+    "players": {
+      "schema": "Player",
+      "description": "Collection of match players"
+    },
+    "matches": {
+      "schema": "Match",
+      "description": "Scheduled and past IPL matches"
+    },
+    "predictions": {
+      "schema": "Prediction",
+      "description": "User and AI generated predictions"
+    },
+    "venues": {
+      "schema": "Venue",
+      "description": "IPL Stadiums and stats"
+    },
+    "update_logs": {
+      "schema": "UpdateLog",
+      "description": "Sync history"
+    }
+  }
+}
